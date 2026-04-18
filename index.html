@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>L13 Fitness Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0f0f0f;
+  --surface: #1a1a1a;
+  --surface2: #222222;
+  --surface3: #2a2a2a;
+  --border: #333;
+  --border2: #444;
+  --accent: #c8f044;
+  --accent-dim: #8aaa1e;
+  --accent-bg: #1e2410;
+  --text: #f0f0f0;
+  --text2: #999;
+  --text3: #666;
+  --green: #4ade80;
+  --green-bg: #0d2016;
+  --red: #f87171;
+  --red-bg: #200d0d;
+  --amber: #fbbf24;
+  --amber-bg: #201500;
+  --blue: #60a5fa;
+  --radius: 10px;
+  --radius-lg: 14px;
+  --mono: 'DM Mono', monospace;
+  --sans: 'DM Sans', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-family: var(--sans); background: var(--bg); color: var(--text); font-size: 15px; }
+body { min-height: 100vh; }
+
+/* ── Layout ── */
+.app { display: flex; min-height: 100vh; }
+.sidebar {
+  width: 240px; flex-shrink: 0; background: var(--surface);
+  border-right: 1px solid var(--border); display: flex; flex-direction: column;
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+}
+.main { flex: 1; padding: 32px 28px; max-width: 860px; }
+
+/* ── Sidebar ── */
+.logo {
+  padding: 24px 20px 16px;
+  font-family: var(--mono); font-size: 16px; font-weight: 500;
+  color: var(--accent); letter-spacing: .04em; border-bottom: 1px solid var(--border);
+}
+.logo span { color: var(--text3); }
+.nav-section { padding: 16px 12px 8px; }
+.nav-label { font-size: 10px; font-weight: 500; color: var(--text3); letter-spacing: .1em; text-transform: uppercase; padding: 0 8px; margin-bottom: 6px; }
+.nav-btn {
+  display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 10px;
+  border-radius: var(--radius); border: none; background: none; color: var(--text2);
+  font-family: var(--sans); font-size: 13px; cursor: pointer; text-align: left; transition: all .15s;
+}
+.nav-btn:hover { background: var(--surface2); color: var(--text); }
+.nav-btn.active { background: var(--accent-bg); color: var(--accent); }
+.nav-icon { width: 16px; height: 16px; flex-shrink: 0; opacity: .7; }
+.nav-btn.active .nav-icon { opacity: 1; }
+.week-list { padding: 4px 12px; }
+.week-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 10px; border-radius: var(--radius); cursor: pointer;
+  color: var(--text2); font-size: 13px; transition: all .15s; border: none; background: none; width: 100%; text-align: left;
+}
+.week-item:hover { background: var(--surface2); color: var(--text); }
+.week-item.active { color: var(--accent); font-weight: 500; }
+.week-pct { font-family: var(--mono); font-size: 11px; color: var(--text3); }
+.week-item.active .week-pct { color: var(--accent-dim); }
+.sidebar-footer { margin-top: auto; padding: 16px; border-top: 1px solid var(--border); }
+.add-week-btn {
+  width: 100%; padding: 9px; border-radius: var(--radius); border: 1px dashed var(--border2);
+  background: none; color: var(--text3); font-family: var(--sans); font-size: 13px; cursor: pointer; transition: all .15s;
+}
+.add-week-btn:hover { border-color: var(--accent-dim); color: var(--accent); }
+
+/* ── Page header ── */
+.page-header { margin-bottom: 28px; }
+.page-title { font-size: 26px; font-weight: 600; color: var(--text); line-height: 1.2; }
+.page-sub { font-size: 13px; color: var(--text3); margin-top: 4px; font-family: var(--mono); }
+
+/* ── Stats ── */
+.stats-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 28px; }
+.stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+.stat-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 6px; }
+.stat-val { font-size: 24px; font-weight: 600; color: var(--text); font-family: var(--mono); line-height: 1; }
+.stat-val .unit { font-size: 14px; color: var(--text3); font-weight: 400; }
+.stat.highlight .stat-val { color: var(--accent); }
+
+/* ── Day cards ── */
+.day-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); margin-bottom: 12px; overflow: hidden; transition: border-color .2s;
+}
+.day-card.done { border-color: var(--accent-dim); }
+.day-header {
+  display: flex; align-items: center; gap: 12px; padding: 14px 16px; cursor: pointer; user-select: none;
+}
+.day-check {
+  width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid var(--border2);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer;
+  transition: all .2s; background: none;
+}
+.day-check.on { background: var(--accent); border-color: var(--accent); }
+.day-check-icon { display: none; width: 11px; height: 8px; }
+.day-check-icon path { stroke: #0f0f0f; stroke-width: 2.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.day-check.on .day-check-icon { display: block; }
+.day-info { flex: 1; min-width: 0; }
+.day-title-row { display: flex; align-items: center; gap: 8px; }
+.day-title { font-size: 14px; font-weight: 500; color: var(--text); }
+.day-tag {
+  font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 20px;
+  background: var(--surface3); color: var(--text3); border: 1px solid var(--border); white-space: nowrap;
+}
+.day-sub { font-size: 12px; color: var(--text3); margin-top: 2px; font-family: var(--mono); }
+.day-chevron { color: var(--text3); font-size: 10px; transition: transform .2s; flex-shrink: 0; }
+.day-chevron.open { transform: rotate(90deg); }
+.day-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.icon-btn {
+  width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border); background: none;
+  color: var(--text3); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .15s;
+}
+.icon-btn:hover { background: var(--surface3); color: var(--text); border-color: var(--border2); }
+.icon-btn.danger:hover { background: var(--red-bg); color: var(--red); border-color: var(--red); }
+
+.progress-track { height: 2px; background: var(--surface3); margin: 0 16px 12px; border-radius: 1px; }
+.progress-fill { height: 2px; background: var(--accent); border-radius: 1px; transition: width .3s; }
+
+.day-body { border-top: 1px solid var(--border); display: none; }
+.day-body.open { display: block; }
+
+/* ── Exercise table ── */
+.ex-table { width: 100%; }
+.ex-thead { display: grid; grid-template-columns: 1fr 90px 130px 90px 60px 32px; gap: 8px; padding: 8px 16px; background: var(--surface2); }
+.ex-thead-cell { font-size: 10px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: .07em; text-align: center; }
+.ex-thead-cell:first-child { text-align: left; }
+.ex-row { display: grid; grid-template-columns: 1fr 90px 130px 90px 60px 32px; gap: 8px; align-items: center; padding: 8px 16px; border-bottom: 1px solid var(--border); transition: background .1s; }
+.ex-row:last-child { border-bottom: none; }
+.ex-row:hover { background: var(--surface2); }
+.ex-name-cell { display: flex; align-items: center; gap: 6px; }
+.ex-name-text { font-size: 13px; color: var(--text); }
+.pr-tag { font-size: 9px; font-weight: 500; padding: 1px 5px; border-radius: 4px; background: var(--green-bg); color: var(--green); border: 1px solid #1a4a2a; white-space: nowrap; }
+.ex-prev { font-size: 12px; color: var(--text3); text-align: center; font-family: var(--mono); }
+.w-group { display: flex; align-items: center; gap: 4px; justify-content: center; }
+.w-btn {
+  width: 24px; height: 24px; border-radius: 5px; border: 1px solid var(--border2);
+  background: var(--surface3); color: var(--text2); font-size: 15px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; transition: all .1s; line-height: 1; flex-shrink: 0;
+}
+.w-btn:hover { background: var(--border2); color: var(--text); }
+.w-inp {
+  width: 56px; border: 1px solid var(--border2); border-radius: 6px; padding: 5px 4px;
+  font-size: 13px; text-align: center; background: var(--surface3); color: var(--text);
+  font-family: var(--mono); transition: border-color .15s;
+}
+.w-inp:focus { outline: none; border-color: var(--accent); }
+.sets-inp {
+  width: 100%; border: 1px solid var(--border2); border-radius: 6px; padding: 5px 8px;
+  font-size: 13px; text-align: center; background: var(--surface3); color: var(--text);
+  font-family: var(--mono); transition: border-color .15s;
+}
+.sets-inp:focus { outline: none; border-color: var(--accent); }
+.ex-done-cell { display: flex; justify-content: center; }
+.ex-cb {
+  width: 20px; height: 20px; border-radius: 5px; border: 1.5px solid var(--border2);
+  cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .15s; background: none;
+}
+.ex-cb.on { background: var(--green); border-color: var(--green); }
+.ex-cb.on::after { content: ''; display: block; width: 8px; height: 6px; border-left: 2px solid #0f0f0f; border-bottom: 2px solid #0f0f0f; transform: rotate(-45deg) translateY(-1px); }
+.ex-del-btn {
+  width: 24px; height: 24px; border-radius: 5px; border: none; background: none;
+  color: var(--text3); cursor: pointer; display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: all .15s; font-size: 14px;
+}
+.ex-row:hover .ex-del-btn { opacity: 1; }
+.ex-del-btn:hover { color: var(--red); background: var(--red-bg); }
+
+/* ── Day footer ── */
+.day-footer { padding: 12px 16px; display: flex; flex-direction: column; gap: 12px; border-top: 1px solid var(--border); background: var(--surface2); }
+.footer-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.footer-label { font-size: 11px; color: var(--text3); white-space: nowrap; text-transform: uppercase; letter-spacing: .06em; font-weight: 500; min-width: 90px; }
+.timer-display { font-family: var(--mono); font-size: 16px; font-weight: 500; color: var(--text); min-width: 48px; }
+.timer-display.active { color: var(--accent); }
+.timer-display.done { color: var(--green); }
+.t-btn {
+  padding: 5px 14px; border-radius: 6px; border: 1px solid var(--border2); background: var(--surface3);
+  color: var(--text2); font-family: var(--sans); font-size: 12px; font-weight: 500; cursor: pointer; transition: all .15s;
+}
+.t-btn:hover { background: var(--border2); color: var(--text); }
+.t-btn.go { border-color: var(--accent-dim); background: var(--accent-bg); color: var(--accent); }
+.t-presets { display: flex; gap: 4px; flex-wrap: wrap; }
+.t-pre {
+  padding: 4px 9px; font-size: 11px; border-radius: 5px; border: 1px solid var(--border);
+  background: none; color: var(--text3); cursor: pointer; font-family: var(--mono); transition: all .1s;
+}
+.t-pre:hover { border-color: var(--accent-dim); color: var(--accent); }
+.rpe-dots { display: flex; gap: 4px; flex-wrap: wrap; }
+.rpe-dot {
+  width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border2);
+  background: var(--surface3); color: var(--text3); font-size: 11px; font-weight: 500;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .1s; font-family: var(--mono);
+}
+.rpe-dot:hover { border-color: var(--border2); color: var(--text); }
+.notes-inp {
+  flex: 1; border: 1px solid var(--border2); border-radius: 6px; padding: 7px 10px;
+  font-size: 13px; font-family: var(--sans); color: var(--text); background: var(--surface3);
+  resize: none; transition: border-color .15s; min-width: 0;
+}
+.notes-inp:focus { outline: none; border-color: var(--accent); }
+
+/* ── Add exercise ── */
+.add-ex-row { padding: 10px 16px; border-top: 1px solid var(--border); }
+.add-ex-btn {
+  display: flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 7px;
+  border: 1px dashed var(--border2); background: none; color: var(--text3);
+  font-family: var(--sans); font-size: 13px; cursor: pointer; transition: all .15s;
+}
+.add-ex-btn:hover { border-color: var(--accent-dim); color: var(--accent); background: var(--accent-bg); }
+
+/* ── Add day ── */
+.add-day-btn {
+  display: flex; align-items: center; gap: 8px; width: 100%; padding: 14px 16px;
+  border-radius: var(--radius-lg); border: 1px dashed var(--border2); background: none;
+  color: var(--text3); font-family: var(--sans); font-size: 14px; cursor: pointer; transition: all .15s; margin-top: 4px;
+}
+.add-day-btn:hover { border-color: var(--accent-dim); color: var(--accent); background: var(--accent-bg); }
+
+/* ── Modal ── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7);
+  z-index: 100; align-items: center; justify-content: center; padding: 20px;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius-lg);
+  padding: 24px; width: 100%; max-width: 420px; max-height: 90vh; overflow-y: auto;
+}
+.modal-title { font-size: 16px; font-weight: 500; color: var(--text); margin-bottom: 16px; }
+.form-field { margin-bottom: 14px; }
+.form-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: .07em; font-weight: 500; margin-bottom: 6px; display: block; }
+.form-input {
+  width: 100%; padding: 9px 12px; border: 1px solid var(--border2); border-radius: 7px;
+  background: var(--surface3); color: var(--text); font-family: var(--sans); font-size: 14px; transition: border-color .15s;
+}
+.form-input:focus { outline: none; border-color: var(--accent); }
+.modal-actions { display: flex; gap: 8px; margin-top: 20px; }
+.btn-primary {
+  flex: 1; padding: 10px; border-radius: 7px; border: none;
+  background: var(--accent); color: #0f0f0f; font-family: var(--sans); font-size: 14px; font-weight: 600; cursor: pointer; transition: opacity .15s;
+}
+.btn-primary:hover { opacity: .85; }
+.btn-secondary {
+  flex: 1; padding: 10px; border-radius: 7px; border: 1px solid var(--border2);
+  background: none; color: var(--text2); font-family: var(--sans); font-size: 14px; cursor: pointer; transition: all .15s;
+}
+.btn-secondary:hover { background: var(--surface3); color: var(--text); }
+
+/* ── Edit day modal ── */
+.edit-day-name { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
+.edit-day-inp {
+  flex: 1; padding: 8px 12px; border: 1px solid var(--border2); border-radius: 7px;
+  background: var(--surface3); color: var(--text); font-family: var(--sans); font-size: 14px;
+}
+.edit-day-inp:focus { outline: none; border-color: var(--accent); }
+
+/* ── Progress view ── */
+.progress-view { display: none; }
+.progress-view.active { display: block; }
+.tracker-view { display: block; }
+.tracker-view.hidden { display: none; }
+.prog-chart-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; margin-bottom: 16px; }
+.prog-chart-title { font-size: 13px; font-weight: 500; color: var(--text2); margin-bottom: 16px; }
+.prog-ex-select {
+  padding: 7px 12px; border: 1px solid var(--border2); border-radius: 7px;
+  background: var(--surface3); color: var(--text); font-family: var(--sans); font-size: 13px; margin-bottom: 16px; width: 100%;
+}
+.prog-ex-select:focus { outline: none; border-color: var(--accent); }
+.chart-area { position: relative; height: 200px; }
+.chart-svg { width: 100%; height: 100%; }
+.prog-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.prog-table th { text-align: left; padding: 8px 12px; font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: .07em; border-bottom: 1px solid var(--border); font-weight: 500; }
+.prog-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text2); }
+.prog-table td:first-child { color: var(--text); font-weight: 500; }
+.prog-table .pr-row td { color: var(--green); }
+
+/* ── Inline edit ── */
+.editable-title {
+  background: none; border: none; font-size: 14px; font-weight: 500; color: var(--text);
+  font-family: var(--sans); cursor: pointer; padding: 0; width: auto; min-width: 60px; max-width: 200px;
+}
+.editable-title:focus { outline: 1px solid var(--accent); border-radius: 3px; padding: 0 4px; cursor: text; }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+/* ── Mobile ── */
+@media (max-width: 680px) {
+  .app { flex-direction: column; }
+  .sidebar { width: 100%; height: auto; position: static; border-right: none; border-bottom: 1px solid var(--border); flex-direction: row; overflow-x: auto; overflow-y: hidden; }
+  .logo { padding: 14px 16px; border-bottom: none; border-right: 1px solid var(--border); white-space: nowrap; }
+  .nav-section { display: none; }
+  .week-list { display: flex; flex-direction: row; padding: 8px; gap: 4px; }
+  .week-item { white-space: nowrap; padding: 6px 12px; }
+  .sidebar-footer { display: none; }
+  .main { padding: 16px; }
+  .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ex-thead, .ex-row { grid-template-columns: 1fr 0 130px 80px 28px 28px; }
+  .ex-thead-cell:nth-child(2), .ex-row .ex-prev { display: none; }
+  .day-actions { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="logo">L13<span>/fit</span></div>
+  <div class="nav-section">
+    <div class="nav-label">Огляд</div>
+    <button class="nav-btn active" onclick="showView('tracker')">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5"/><rect x="1" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5"/></svg>
+      Трекер
+    </button>
+    <button class="nav-btn" onclick="showView('progress')">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="1,12 5,7 8,9 12,4 15,6"/><line x1="1" y1="14" x2="15" y2="14"/></svg>
+      Прогресія
+    </button>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Тижні</div>
+    <div class="week-list" id="week-list"></div>
+  </div>
+  <div class="sidebar-footer">
+    <button class="add-week-btn" onclick="addWeek()">+ Додати тиждень</button>
+  </div>
+</aside>
+
+<!-- Main -->
+<main class="main">
+
+  <!-- Tracker view -->
+  <div class="tracker-view" id="tracker-view">
+    <div class="page-header">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <div>
+          <div class="page-title" id="week-title">Тиждень 1</div>
+          <div class="page-sub" id="week-dates">—</div>
+        </div>
+        <div style="margin-left:auto;display:flex;gap:8px">
+          <button class="icon-btn" onclick="renameWeek()" title="Перейменувати тиждень">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 2l3 3L5 12H2V9L9 2z"/></svg>
+          </button>
+          <button class="icon-btn danger" onclick="deleteWeek()" title="Видалити тиждень">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="2,4 12,4"/><path d="M5,4V2h4v2"/><path d="M3,4l1,8h6l1-8"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="stats-grid" id="stats-grid"></div>
+    <div id="days-container"></div>
+    <button class="add-day-btn" onclick="openAddDay()">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="2" x2="8" y2="14"/><line x1="2" y1="8" x2="14" y2="8"/></svg>
+      Додати тренувальний день
+    </button>
+  </div>
+
+  <!-- Progress view -->
+  <div class="progress-view" id="progress-view">
+    <div class="page-header">
+      <div class="page-title">Прогресія ваг</div>
+      <div class="page-sub">динаміка по тижнях</div>
+    </div>
+    <div class="prog-chart-wrap">
+      <div class="prog-chart-title">Вибери вправу</div>
+      <select class="prog-ex-select" id="prog-select" onchange="renderProgress()"></select>
+      <div class="chart-area"><svg class="chart-svg" id="prog-svg"></svg></div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden">
+      <table class="prog-table" id="prog-table">
+        <thead><tr><th>Тиждень</th><th>Вага (кг)</th><th>Підходи</th><th>Зміна</th></tr></thead>
+        <tbody id="prog-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<!-- Modals -->
+<div class="modal-overlay" id="modal-add-day">
+  <div class="modal">
+    <div class="modal-title">Новий тренувальний день</div>
+    <div class="form-field"><label class="form-label">Назва дня</label><input class="form-input" id="new-day-name" placeholder="День D" /></div>
+    <div class="form-field"><label class="form-label">М'язові групи / фокус</label><input class="form-input" id="new-day-focus" placeholder="Плечі / Трапеція" /></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('modal-add-day')">Скасувати</button>
+      <button class="btn-primary" onclick="confirmAddDay()">Додати</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-add-ex">
+  <div class="modal">
+    <div class="modal-title">Нова вправа</div>
+    <div class="form-field"><label class="form-label">Назва вправи</label><input class="form-input" id="new-ex-name" placeholder="Назва вправи" /></div>
+    <div class="form-field"><label class="form-label">Підходи × Повтори</label><input class="form-input" id="new-ex-sets" placeholder="3×10" /></div>
+    <div class="form-field"><label class="form-label">Відпочинок (секунди)</label><input class="form-input" id="new-ex-rest" type="number" placeholder="60" /></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('modal-add-ex')">Скасувати</button>
+      <button class="btn-primary" onclick="confirmAddEx()">Додати</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-rename">
+  <div class="modal">
+    <div class="modal-title" id="modal-rename-title">Перейменувати</div>
+    <div class="form-field"><label class="form-label">Нова назва</label><input class="form-input" id="rename-input" /></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('modal-rename')">Скасувати</button>
+      <button class="btn-primary" onclick="confirmRename()">Зберегти</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const LS_KEY = 'l13_v2';
+
+const DEFAULT_DATA = {
+  weeks: [
+    {
+      id: 1, name: 'Тиждень 1', date: '',
+      days: [
+        { id: 'd1', name: 'День A', focus: 'Груди / Трицепс / Плечі', done: false, rpe: 0, notes: '',
+          exercises: [
+            { id: 'e1', name: 'Жим штанги лежачи', sets: '4×8', rest: 90, weight: '', reps: '4×8', exDone: false },
+            { id: 'e2', name: 'Жим гантелей похилий', sets: '3×10', rest: 75, weight: '', reps: '3×10', exDone: false },
+            { id: 'e3', name: 'Зведення в кросовері', sets: '3×12', rest: 60, weight: '', reps: '3×12', exDone: false },
+            { id: 'e4', name: 'Жим штанги стоячи', sets: '3×10', rest: 75, weight: '', reps: '3×10', exDone: false },
+            { id: 'e5', name: 'Розгинання на блоці', sets: '3×12', rest: 60, weight: '', reps: '3×12', exDone: false },
+          ]
+        },
+        { id: 'd2', name: 'День B', focus: 'Спина / Біцепс', done: false, rpe: 0, notes: '',
+          exercises: [
+            { id: 'e6', name: 'Підтягування / тяга зверху', sets: '4×8', rest: 90, weight: '', reps: '4×8', exDone: false },
+            { id: 'e7', name: 'Тяга штанги в нахилі', sets: '4×10', rest: 75, weight: '', reps: '4×10', exDone: false },
+            { id: 'e8', name: 'Тяга нижнього блоку', sets: '3×12', rest: 60, weight: '', reps: '3×12', exDone: false },
+            { id: 'e9', name: 'Підйом штанги на біцепс', sets: '3×10', rest: 75, weight: '', reps: '3×10', exDone: false },
+            { id: 'e10', name: 'Молоткові згинання', sets: '3×12', rest: 60, weight: '', reps: '3×12', exDone: false },
+          ]
+        },
+        { id: 'd3', name: 'День C', focus: 'Ноги / Прес', done: false, rpe: 0, notes: '',
+          exercises: [
+            { id: 'e11', name: 'Присідання зі штангою', sets: '4×8', rest: 120, weight: '', reps: '4×8', exDone: false },
+            { id: 'e12', name: 'Румунська тяга', sets: '3×10', rest: 90, weight: '', reps: '3×10', exDone: false },
+            { id: 'e13', name: 'Жим ногами', sets: '3×12', rest: 75, weight: '', reps: '3×12', exDone: false },
+            { id: 'e14', name: 'Підйоми на носки', sets: '4×15', rest: 45, weight: '', reps: '4×15', exDone: false },
+            { id: 'e15', name: 'Планка', sets: '3×45с', rest: 45, weight: '', reps: '3×45с', exDone: false },
+          ]
+        }
+      ]
+    }
+  ],
+  currentWeekId: 1,
+  nextId: 100
+};
+
+let data;
+let timers = {};
+let pendingDayIdx = null;
+let renameTarget = null;
+let openDays = {};
+
+function load() {
+  try { data = JSON.parse(localStorage.getItem(LS_KEY)) || deepClone(DEFAULT_DATA); }
+  catch(e) { data = deepClone(DEFAULT_DATA); }
+}
+function save() { localStorage.setItem(LS_KEY, JSON.stringify(data)); }
+function deepClone(o) { return JSON.parse(JSON.stringify(o)); }
+function uid() { return data.nextId++; }
+
+function currentWeek() { return data.weeks.find(w => w.id === data.currentWeekId) || data.weeks[0]; }
+
+function getPrevWeight(exName) {
+  const weeks = data.weeks;
+  const ci = weeks.findIndex(w => w.id === data.currentWeekId);
+  for (let wi = ci - 1; wi >= 0; wi--) {
+    for (const day of weeks[wi].days) {
+      for (const ex of day.exercises) {
+        if (ex.name === exName && ex.weight) return parseFloat(ex.weight) || 0;
+      }
+    }
+  }
+  return 0;
+}
+
+function getBestWeight(exName) {
+  let best = 0;
+  for (const week of data.weeks) {
+    for (const day of week.days) {
+      for (const ex of day.exercises) {
+        if (ex.name === exName) {
+          const v = parseFloat(ex.weight) || 0;
+          if (v > best) best = v;
+        }
+      }
+    }
+  }
+  return best;
+}
+
+/* ── Render ── */
+function render() {
+  renderSidebar();
+  renderStats();
+  renderDays();
+  save();
+}
+
+function renderSidebar() {
+  const wl = document.getElementById('week-list');
+  wl.innerHTML = '';
+  data.weeks.forEach(w => {
+    const totalEx = w.days.reduce((a, d) => a + d.exercises.length, 0);
+    const doneEx = w.days.reduce((a, d) => a + d.exercises.filter(e => e.exDone).length, 0);
+    const pct = totalEx ? Math.round(doneEx / totalEx * 100) : 0;
+    const btn = document.createElement('button');
+    btn.className = 'week-item' + (w.id === data.currentWeekId ? ' active' : '');
+    btn.innerHTML = `<span>${w.name}</span><span class="week-pct">${pct}%</span>`;
+    btn.onclick = () => { data.currentWeekId = w.id; render(); };
+    wl.appendChild(btn);
+  });
+  const wt = document.getElementById('week-title');
+  if (wt) wt.textContent = currentWeek().name;
+  const wd = document.getElementById('week-dates');
+  if (wd) wd.textContent = currentWeek().date || 'натисни на олівець щоб налаштувати';
+}
+
+function renderStats() {
+  const w = currentWeek();
+  const totalDays = w.days.length;
+  const doneDays = w.days.filter(d => d.done).length;
+  const totalEx = w.days.reduce((a, d) => a + d.exercises.length, 0);
+  const doneEx = w.days.reduce((a, d) => a + d.exercises.filter(e => e.exDone).length, 0);
+  const prCount = countPRs(w);
+  const pct = totalEx ? Math.round(doneEx / totalEx * 100) : 0;
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat"><div class="stat-label">Тренувань</div><div class="stat-val">${doneDays}<span class="unit">/${totalDays}</span></div></div>
+    <div class="stat"><div class="stat-label">Вправ</div><div class="stat-val">${doneEx}<span class="unit">/${totalEx}</span></div></div>
+    <div class="stat ${prCount > 0 ? 'highlight' : ''}"><div class="stat-label">Рекорди (PR)</div><div class="stat-val">${prCount}</div></div>
+    <div class="stat"><div class="stat-label">Прогрес</div><div class="stat-val">${pct}<span class="unit">%</span></div></div>
+  `;
+}
+
+function countPRs(week) {
+  let n = 0;
+  const ci = data.weeks.findIndex(w => w.id === week.id);
+  if (ci === 0) return 0;
+  week.days.forEach(day => day.exercises.forEach(ex => {
+    const cur = parseFloat(ex.weight) || 0;
+    const best = getBestWeightBefore(ex.name, ci);
+    if (cur > 0 && cur > best) n++;
+  }));
+  return n;
+}
+
+function getBestWeightBefore(exName, beforeIdx) {
+  let best = 0;
+  for (let i = 0; i < beforeIdx; i++) {
+    data.weeks[i].days.forEach(d => d.exercises.forEach(e => {
+      if (e.name === exName) { const v = parseFloat(e.weight) || 0; if (v > best) best = v; }
+    }));
+  }
+  return best;
+}
+
+function renderDays() {
+  const w = currentWeek();
+  const c = document.getElementById('days-container');
+  c.innerHTML = '';
+  w.days.forEach((day, di) => {
+    const totalEx = day.exercises.length;
+    const doneEx = day.exercises.filter(e => e.exDone).length;
+    const pct = totalEx ? Math.round(doneEx / totalEx * 100) : 0;
+    const open = openDays[day.id] || false;
+    const ci = data.weeks.findIndex(wk => wk.id === data.currentWeekId);
+
+    const card = document.createElement('div');
+    card.className = 'day-card' + (day.done ? ' done' : '');
+    card.id = 'day-' + day.id;
+
+    const exRows = day.exercises.map((ex, ei) => {
+      const prev = getPrevWeight(ex.name);
+      const best = getBestWeight(ex.name);
+      const cur = parseFloat(ex.weight) || 0;
+      const isPR = ci > 0 && cur > 0 && cur > getBestWeightBefore(ex.name, ci);
+      const prevTxt = prev > 0 ? prev + ' кг' : '—';
+      return `<div class="ex-row" id="exrow-${day.id}-${ei}">
+        <div class="ex-name-cell">
+          <span class="ex-name-text" contenteditable="true" onblur="renameEx(${di},${ei},this.textContent)" onclick="event.stopPropagation()">${ex.name}</span>
+          ${isPR ? '<span class="pr-tag">PR</span>' : ''}
+        </div>
+        <div class="ex-prev">${prevTxt}</div>
+        <div class="w-group">
+          <button class="w-btn" onclick="adjW(${di},${ei},-2.5)">−</button>
+          <input class="w-inp" type="number" min="0" step="0.5" value="${ex.weight}" placeholder="кг" oninput="setW(${di},${ei},this.value)" />
+          <button class="w-btn" onclick="adjW(${di},${ei},2.5)">+</button>
+        </div>
+        <input class="sets-inp" type="text" value="${ex.reps}" oninput="setSets(${di},${ei},this.value)" />
+        <div class="ex-done-cell"><div class="ex-cb ${ex.exDone ? 'on' : ''}" onclick="toggleEx(${di},${ei})"></div></div>
+        <button class="ex-del-btn" onclick="deleteEx(${di},${ei})" title="Видалити вправу">✕</button>
+      </div>`;
+    }).join('');
+
+    const rpeDots = Array.from({length: 10}, (_, i) => {
+      const v = i + 1;
+      const on = day.rpe === v;
+      const colors = ['#4ade80','#4ade80','#86efac','#86efac','#60a5fa','#60a5fa','#fbbf24','#fbbf24','#f87171','#f87171'];
+      const col = colors[i];
+      return `<div class="rpe-dot" style="${on ? `background:${col};border-color:${col};color:#0f0f0f` : ''}" onclick="setRpe(${di},${v})">${v}</div>`;
+    }).join('');
+
+    const tKey = day.id;
+    const tState = timers[tKey] || {};
+    const tDisp = tState.running ? tState.left + 'с' : (tState.done ? 'Готово!' : '—');
+    const tClass = tState.running ? 'active' : (tState.done ? 'done' : '');
+    const restPresets = [...new Set(day.exercises.map(e => e.rest).filter(Boolean))].sort((a,b)=>a-b);
+
+    card.innerHTML = `
+      <div class="day-header" onclick="toggleDay('${day.id}')">
+        <div class="day-check ${day.done ? 'on' : ''}" onclick="toggleDayDone(event,${di})">
+          <svg class="day-check-icon" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg>
+        </div>
+        <div class="day-info">
+          <div class="day-title-row">
+            <input class="editable-title" value="${day.name}" onblur="renameDay(${di},this.value)" onclick="event.stopPropagation()" />
+            <span class="day-tag">${day.focus}</span>
+          </div>
+          <div class="day-sub">${doneEx}/${totalEx} вправ${day.rpe > 0 ? ' · RPE ' + day.rpe : ''}</div>
+        </div>
+        <div class="day-actions" onclick="event.stopPropagation()">
+          <button class="icon-btn" onclick="editDayFocus(${di})" title="Змінити фокус">
+            <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 2l3 3L5 12H2V9L9 2z"/></svg>
+          </button>
+          <button class="icon-btn danger" onclick="deleteDay(${di})" title="Видалити день">
+            <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="2,4 12,4"/><path d="M5,4V2h4v2"/><path d="M3,4l1,8h6l1-8"/></svg>
+          </button>
+        </div>
+        <div class="day-chevron ${open ? 'open' : ''}">▶</div>
+      </div>
+      <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+      <div class="day-body ${open ? 'open' : ''}" id="body-${day.id}">
+        <div class="ex-table">
+          <div class="ex-thead">
+            <div class="ex-thead-cell" style="text-align:left">Вправа</div>
+            <div class="ex-thead-cell">Минулий раз</div>
+            <div class="ex-thead-cell">Вага (кг)</div>
+            <div class="ex-thead-cell">Підходи</div>
+            <div class="ex-thead-cell"></div>
+            <div class="ex-thead-cell"></div>
+          </div>
+          ${exRows}
+        </div>
+        <div class="add-ex-row">
+          <button class="add-ex-btn" onclick="openAddEx(${di})">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2"><line x1="7" y1="2" x2="7" y2="12"/><line x1="2" y1="7" x2="12" y2="7"/></svg>
+            Додати вправу
+          </button>
+        </div>
+        <div class="day-footer">
+          <div class="footer-row">
+            <span class="footer-label">Таймер</span>
+            <span class="timer-display ${tClass}" id="timer-${day.id}">${tDisp}</span>
+            <button class="t-btn ${!tState.running ? 'go' : ''}" id="tbtn-${day.id}" onclick="toggleTimer('${day.id}',${restPresets[0]||60})">${tState.running ? 'Стоп' : 'Старт'}</button>
+            <div class="t-presets">${restPresets.map(r=>`<button class="t-pre" onclick="startTimer('${day.id}',${r})">${r}с</button>`).join('')}</div>
+          </div>
+          <div class="footer-row">
+            <span class="footer-label">Важкість</span>
+            <div class="rpe-dots">${rpeDots}</div>
+          </div>
+          <div class="footer-row">
+            <span class="footer-label">Нотатки</span>
+            <textarea class="notes-inp" rows="2" placeholder="Самопочуття, план, зауваження..." oninput="setNotes(${di},this.value)">${day.notes || ''}</textarea>
+          </div>
+        </div>
+      </div>
+    `;
+    c.appendChild(card);
+  });
+}
+
+/* ── Actions ── */
+function toggleDay(dayId) {
+  openDays[dayId] = !openDays[dayId];
+  render();
+}
+function toggleDayDone(e, di) {
+  e.stopPropagation();
+  const w = currentWeek();
+  w.days[di].done = !w.days[di].done;
+  render();
+}
+function toggleEx(di, ei) {
+  currentWeek().days[di].exercises[ei].exDone = !currentWeek().days[di].exercises[ei].exDone;
+  render();
+}
+function setW(di, ei, v) { currentWeek().days[di].exercises[ei].weight = v; save(); renderStats(); renderSidebar(); }
+function adjW(di, ei, d) {
+  const ex = currentWeek().days[di].exercises[ei];
+  const cur = parseFloat(ex.weight) || 0;
+  ex.weight = String(Math.max(0, Math.round((cur + d) * 2) / 2));
+  render();
+}
+function setSets(di, ei, v) { currentWeek().days[di].exercises[ei].reps = v; save(); }
+function setRpe(di, v) {
+  const day = currentWeek().days[di];
+  day.rpe = day.rpe === v ? 0 : v;
+  render();
+}
+function setNotes(di, v) { currentWeek().days[di].notes = v; save(); }
+function renameDay(di, v) { currentWeek().days[di].name = v.trim() || currentWeek().days[di].name; save(); renderSidebar(); }
+function renameEx(di, ei, v) { currentWeek().days[di].exercises[ei].name = v.trim() || currentWeek().days[di].exercises[ei].name; save(); }
+
+function deleteEx(di, ei) {
+  if (!confirm('Видалити вправу?')) return;
+  currentWeek().days[di].exercises.splice(ei, 1);
+  render();
+}
+function deleteDay(di) {
+  if (!confirm('Видалити тренувальний день?')) return;
+  currentWeek().days.splice(di, 1);
+  render();
+}
+
+/* ── Timer ── */
+function startTimer(dayId, secs) {
+  if (timers[dayId]) clearInterval(timers[dayId].iv);
+  let left = secs;
+  const iv = setInterval(() => {
+    left--;
+    const el = document.getElementById('timer-' + dayId);
+    const btn = document.getElementById('tbtn-' + dayId);
+    if (el) { el.textContent = left > 0 ? left + 'с' : 'Готово!'; el.className = 'timer-display ' + (left > 0 ? 'active' : 'done'); }
+    if (left <= 0) {
+      clearInterval(iv);
+      timers[dayId] = { left: 0, running: false, done: true };
+      if (btn) { btn.textContent = 'Старт'; btn.className = 't-btn go'; }
+    } else { timers[dayId].left = left; }
+  }, 1000);
+  timers[dayId] = { iv, left, running: true, done: false };
+  const el = document.getElementById('timer-' + dayId);
+  const btn = document.getElementById('tbtn-' + dayId);
+  if (el) { el.textContent = left + 'с'; el.className = 'timer-display active'; }
+  if (btn) { btn.textContent = 'Стоп'; btn.className = 't-btn'; }
+}
+function toggleTimer(dayId, secs) {
+  if (timers[dayId] && timers[dayId].running) {
+    clearInterval(timers[dayId].iv);
+    timers[dayId] = { left: 0, running: false, done: false };
+    const el = document.getElementById('timer-' + dayId);
+    const btn = document.getElementById('tbtn-' + dayId);
+    if (el) { el.textContent = '—'; el.className = 'timer-display'; }
+    if (btn) { btn.textContent = 'Старт'; btn.className = 't-btn go'; }
+  } else { startTimer(dayId, secs); }
+}
+
+/* ── Add day/ex modals ── */
+function openAddDay() {
+  document.getElementById('new-day-name').value = '';
+  document.getElementById('new-day-focus').value = '';
+  document.getElementById('modal-add-day').classList.add('open');
+  setTimeout(() => document.getElementById('new-day-name').focus(), 50);
+}
+function confirmAddDay() {
+  const name = document.getElementById('new-day-name').value.trim() || 'День';
+  const focus = document.getElementById('new-day-focus').value.trim() || 'Загальне';
+  currentWeek().days.push({ id: 'd' + uid(), name, focus, done: false, rpe: 0, notes: '', exercises: [] });
+  closeModal('modal-add-day');
+  render();
+}
+function openAddEx(di) {
+  pendingDayIdx = di;
+  document.getElementById('new-ex-name').value = '';
+  document.getElementById('new-ex-sets').value = '';
+  document.getElementById('new-ex-rest').value = '60';
+  document.getElementById('modal-add-ex').classList.add('open');
+  setTimeout(() => document.getElementById('new-ex-name').focus(), 50);
+}
+function confirmAddEx() {
+  const name = document.getElementById('new-ex-name').value.trim();
+  if (!name) return;
+  const sets = document.getElementById('new-ex-sets').value.trim() || '3×10';
+  const rest = parseInt(document.getElementById('new-ex-rest').value) || 60;
+  currentWeek().days[pendingDayIdx].exercises.push({ id: 'e' + uid(), name, sets, rest, weight: '', reps: sets, exDone: false });
+  closeModal('modal-add-ex');
+  render();
+}
+function editDayFocus(di) {
+  renameTarget = { type: 'focus', di };
+  document.getElementById('modal-rename-title').textContent = 'Змінити фокус';
+  document.getElementById('rename-input').value = currentWeek().days[di].focus;
+  document.getElementById('modal-rename').classList.add('open');
+  setTimeout(() => document.getElementById('rename-input').focus(), 50);
+}
+
+/* ── Week management ── */
+function addWeek() {
+  const n = data.weeks.length + 1;
+  const newWeek = deepClone(currentWeek());
+  newWeek.id = uid();
+  newWeek.name = 'Тиждень ' + n;
+  newWeek.date = '';
+  newWeek.days.forEach(d => {
+    d.id = 'd' + uid();
+    d.done = false; d.rpe = 0; d.notes = '';
+    d.exercises.forEach(e => { e.id = 'e' + uid(); e.exDone = false; });
+  });
+  data.weeks.push(newWeek);
+  data.currentWeekId = newWeek.id;
+  render();
+}
+function deleteWeek() {
+  if (data.weeks.length <= 1) { alert('Не можна видалити єдиний тиждень.'); return; }
+  if (!confirm('Видалити цей тиждень?')) return;
+  const idx = data.weeks.findIndex(w => w.id === data.currentWeekId);
+  data.weeks.splice(idx, 1);
+  data.currentWeekId = data.weeks[Math.max(0, idx - 1)].id;
+  render();
+}
+function renameWeek() {
+  renameTarget = { type: 'week' };
+  document.getElementById('modal-rename-title').textContent = 'Перейменувати тиждень';
+  document.getElementById('rename-input').value = currentWeek().name;
+  document.getElementById('modal-rename').classList.add('open');
+  setTimeout(() => document.getElementById('rename-input').focus(), 50);
+}
+function confirmRename() {
+  const v = document.getElementById('rename-input').value.trim();
+  if (!v) return;
+  if (renameTarget.type === 'week') currentWeek().name = v;
+  if (renameTarget.type === 'focus') currentWeek().days[renameTarget.di].focus = v;
+  closeModal('modal-rename');
+  render();
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+/* ── Views ── */
+function showView(v) {
+  document.getElementById('tracker-view').classList.toggle('hidden', v !== 'tracker');
+  document.getElementById('progress-view').classList.toggle('active', v === 'progress');
+  document.querySelectorAll('.nav-btn').forEach((b, i) => b.classList.toggle('active', (v === 'tracker' && i === 0) || (v === 'progress' && i === 1)));
+  if (v === 'progress') renderProgress();
+}
+
+/* ── Progress chart ── */
+function renderProgress() {
+  const sel = document.getElementById('prog-select');
+  const allEx = new Set();
+  data.weeks.forEach(w => w.days.forEach(d => d.exercises.forEach(e => allEx.add(e.name))));
+  const prev = sel.value;
+  sel.innerHTML = [...allEx].map(n => `<option value="${n}" ${n === prev ? 'selected' : ''}>${n}</option>`).join('');
+  const exName = sel.value;
+  if (!exName) return;
+
+  const points = data.weeks.map((w, wi) => {
+    let wt = 0;
+    let sets = '';
+    w.days.forEach(d => d.exercises.forEach(e => { if (e.name === exName && e.weight) { wt = parseFloat(e.weight) || 0; sets = e.reps; } }));
+    return { week: w.name, wt, sets, wi };
+  }).filter(p => p.wt > 0);
+
+  const svg = document.getElementById('prog-svg');
+  if (points.length < 2) { svg.innerHTML = `<text x="50%" y="50%" fill="#666" text-anchor="middle" font-family="DM Sans" font-size="13">Недостатньо даних — введи вагу в декількох тижнях</text>`; }
+  else {
+    const W = 700, H = 180, pad = 40;
+    const vals = points.map(p => p.wt);
+    const min = Math.min(...vals) * 0.9, max = Math.max(...vals) * 1.05;
+    const xScale = i => pad + i * (W - pad * 2) / (points.length - 1);
+    const yScale = v => H - pad - (v - min) / (max - min) * (H - pad * 2);
+    const pts = points.map((p, i) => `${xScale(i)},${yScale(p.wt)}`).join(' ');
+    svg.innerHTML = `
+      <polyline points="${pts}" fill="none" stroke="#c8f044" stroke-width="2" stroke-linejoin="round"/>
+      ${points.map((p, i) => `<circle cx="${xScale(i)}" cy="${yScale(p.wt)}" r="4" fill="#c8f044"/>
+        <text x="${xScale(i)}" y="${yScale(p.wt) - 10}" fill="#c8f044" font-size="11" text-anchor="middle" font-family="DM Mono">${p.wt}</text>
+        <text x="${xScale(i)}" y="${H - 8}" fill="#666" font-size="10" text-anchor="middle" font-family="DM Sans">${p.week.replace('Тиждень ', 'Тиж.')}</text>`).join('')}
+    `;
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  }
+
+  const tbody = document.getElementById('prog-tbody');
+  let prevWt = 0;
+  tbody.innerHTML = data.weeks.map(w => {
+    let wt = 0, sets = '';
+    w.days.forEach(d => d.exercises.forEach(e => { if (e.name === exName && e.weight) { wt = parseFloat(e.weight) || 0; sets = e.reps; } }));
+    if (!wt) return '';
+    const diff = prevWt ? (wt - prevWt > 0 ? `+${(wt - prevWt).toFixed(1)} кг` : `${(wt - prevWt).toFixed(1)} кг`) : '—';
+    const isPR = wt > prevWt && prevWt > 0;
+    prevWt = wt;
+    return `<tr class="${isPR ? 'pr-row' : ''}"><td>${w.name}</td><td style="font-family:var(--mono)">${wt} кг</td><td style="font-family:var(--mono)">${sets}</td><td style="font-family:var(--mono);color:${isPR?'#4ade80':'#999'}">${diff}</td></tr>`;
+  }).join('');
+}
+
+/* ── Keyboard ── */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+  if ((e.key === 'Enter') && document.getElementById('modal-add-day').classList.contains('open')) confirmAddDay();
+  if ((e.key === 'Enter') && document.getElementById('modal-add-ex').classList.contains('open')) confirmAddEx();
+  if ((e.key === 'Enter') && document.getElementById('modal-rename').classList.contains('open')) confirmRename();
+});
+document.querySelectorAll('.modal-overlay').forEach(m => m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); }));
+
+load();
+render();
+</script>
+</body>
+</html>
