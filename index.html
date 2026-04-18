@@ -179,6 +179,7 @@ body { min-height: 100vh; }
 }
 .ex-row:hover .ex-del-btn { opacity: 1; }
 .ex-del-btn:hover { color: var(--red); background: var(--red-bg); }
+.ex-row-controls { display: contents; }
 
 /* ── Day footer ── */
 .day-footer { padding: 12px 16px; display: flex; flex-direction: column; gap: 12px; border-top: 1px solid var(--border); background: var(--surface2); }
@@ -309,11 +310,30 @@ body { min-height: 100vh; }
   .week-list { display: flex; flex-direction: row; padding: 8px; gap: 4px; }
   .week-item { white-space: nowrap; padding: 6px 12px; }
   .sidebar-footer { display: none; }
-  .main { padding: 16px; }
+  .main { padding: 12px; }
   .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .ex-thead, .ex-row { grid-template-columns: 1fr 0 130px 80px 28px 28px; }
-  .ex-thead-cell:nth-child(2), .ex-row .ex-prev { display: none; }
   .day-actions { display: none; }
+  .ex-thead { display: none; }
+  .ex-row {
+    display: flex; flex-direction: column; gap: 8px;
+    padding: 12px 14px; border-bottom: 1px solid var(--border);
+  }
+  .ex-name-cell { font-size: 14px; font-weight: 500; }
+  .ex-prev { display: none; }
+  .ex-row-controls {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .w-group { flex: 1; min-width: 140px; }
+  .w-inp { width: 64px; }
+  .sets-inp { flex: 1; min-width: 80px; }
+  .ex-done-cell { margin-left: auto; }
+  .ex-del-btn { opacity: 1 !important; }
+  .footer-row { flex-wrap: wrap; gap: 8px; }
+  .footer-label { min-width: 70px; }
+  .rpe-dots { flex-wrap: wrap; }
+  .day-header { padding: 12px; }
+  .day-tag { display: none; }
+  .page-title { font-size: 20px; }
 }
 </style>
 </head>
@@ -609,14 +629,16 @@ function renderDays() {
           ${isPR ? '<span class="pr-tag">PR</span>' : ''}
         </div>
         <div class="ex-prev">${prevTxt}</div>
-        <div class="w-group">
-          <button class="w-btn" onclick="adjW(${di},${ei},-2.5)">−</button>
-          <input class="w-inp" type="number" min="0" step="0.5" value="${ex.weight}" placeholder="кг" oninput="setW(${di},${ei},this.value)" />
-          <button class="w-btn" onclick="adjW(${di},${ei},2.5)">+</button>
+        <div class="ex-row-controls">
+          <div class="w-group">
+            <button class="w-btn" onclick="adjW(${di},${ei},-2.5)">−</button>
+            <input class="w-inp" type="number" min="0" step="0.5" value="${ex.weight}" placeholder="кг" oninput="setW(${di},${ei},this.value)" />
+            <button class="w-btn" onclick="adjW(${di},${ei},2.5)">+</button>
+          </div>
+          <input class="sets-inp" type="text" value="${ex.reps}" oninput="setSets(${di},${ei},this.value)" />
+          <div class="ex-done-cell"><div class="ex-cb ${ex.exDone ? 'on' : ''}" onclick="toggleEx(${di},${ei})"></div></div>
+          <button class="ex-del-btn" onclick="deleteEx(${di},${ei})" title="Видалити вправу">✕</button>
         </div>
-        <input class="sets-inp" type="text" value="${ex.reps}" oninput="setSets(${di},${ei},this.value)" />
-        <div class="ex-done-cell"><div class="ex-cb ${ex.exDone ? 'on' : ''}" onclick="toggleEx(${di},${ei})"></div></div>
-        <button class="ex-del-btn" onclick="deleteEx(${di},${ei})" title="Видалити вправу">✕</button>
       </div>`;
     }).join('');
 
